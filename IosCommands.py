@@ -7,7 +7,7 @@ IPV4_REGEX = r'(\d{1,3}[.]\d{1,3}[.]\d{1,3}[.]\d{1,3})'
 
 class IosCommands():
 
-    def __init__(self, device, ip=[], user='cisco', password='cisco', device_type='cisco_ios'):
+    def __init__(self, device, ip, user='cisco', password='cisco', device_type='cisco_ios'):
         self.ip = ip
         self.user = user
         self.password = password
