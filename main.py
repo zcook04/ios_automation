@@ -25,7 +25,7 @@ def report_device_validation_errors(ip, e):
             VALIDATION_ERRORS[ip][k] = v
 
 
-def get_device_ouputs(ip, conn=None, device_type='cisco_ios', username='cisco', password='cisco'):
+def get_device_ouputs(ip, conn, device_type='cisco_ios', username='cisco', password='cisco'):
     deviceOuput = IosOutput(device=conn, ip=ip)
     deviceOuput.output_gather_all()
     update_device_info(deviceOuput.device_info)
