@@ -66,12 +66,16 @@ class IosCommands():
         self.output_running_config()
         self.output_ip_int_br()
         self.output_cdp_neighbors_det()
+        self.output_version()
 
     def output_running_config(self):
-        output = self.device.send_command('show running-config')
-        self._console_report('Outputting Show Running Configuration')
+        output_a = self.device.send_command('show running-config all')
+        output_b = self.device.send_command('show running-config')
+        self._console_report('Outputting Show Running Configurations')
+        with open(f'{self.output_dir}{self.ip}-running-cfg-all.txt', 'w') as f:
+            f.write(output_a)
         with open(f'{self.output_dir}{self.ip}-running-cfg.txt', 'w') as f:
-            f.write(output)
+            f.write(output_b)
 
     def output_ip_int_br(self):
         output = self.device.send_command('show ip int br')
@@ -83,4 +87,10 @@ class IosCommands():
         output = self.device.send_command('show cdp neighbors det')
         self._console_report('Outputting Show CDP Neighbors Detail')
         with open(f'{self.output_dir}{self.ip}-cdp-nei-br.txt', 'w') as f:
+            f.write(output)
+
+    def output_version(self):
+        output = self.device.send_command('show version')
+        self._console_report('Outputting Show Version')
+        with open(f'{self.output_dir}{self.ip}-version', 'w') as f:
             f.write(output)
