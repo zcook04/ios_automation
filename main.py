@@ -1,64 +1,74 @@
 from netmiko import ConnectHandler
-from IosCommands import IosCommands
+from IosOutput import IosOutput
 from bcolors import bcolors
 import os
 
 # Placeholder for testing.  Will be dynmically imported in future.
-ips = ['192.168.101.32', '192.168.101.33']
+ips = {'192.168.101.32', '192.168.101.33'}
 
 # Constants
 DEVICE_INFO = []
 VALIDATION_ERRORS = {}
 
 
-def configure_devices(ip, device_type='cisco_ios', username='cisco', password='cisco'):
-    ssh_connection = None
-    try:
-        # INFORM USER WHICH DEVICE IS CURRENTLY CONNECTED.
-        print(f'#------Connecting to {ip}')
-        ssh_connection = ConnectHandler(device_type='cisco_ios',
-                                        ip=ip, username='cisco', password='cisco')
-        print(f'{bcolors.OKGREEN}#------Connected{bcolors.ENDC}')
+def update_device_info(info):
+    for device in DEVICE_INFO:
+        if device['hostname'] == info['hostname']:
+            return
+    DEVICE_INFO.append(info)
 
-        # CREATE DEVICE OBJECT
-        device = IosCommands(device=ssh_connection, ip=ip)
 
-        # INDIVIDUAL DEVICE COMMANDS REQUESTED
-        device.output_gather_all()
+def report_device_validation_errors(ip, e):
+    if ip not in VALIDATION_ERRORS.keys():
+        VALIDATION_ERRORS[ip] = e
+    else:
+        for k, v in e:
+            VALIDATION_ERRORS[ip][k] = v
 
-        # APPEND CURRENT DEVICE INFO TO MASTER DEVICE INVENTORY LIST.
-        DEVICE_INFO.append(device.device_info)
 
-        # APPEND ANY VALIDATION ERRORS DURING CONFIG
-        if device.validation_errors:
-            if ip not in VALIDATION_ERRORS.keys():
-                VALIDATION_ERRORS[ip] = device.validation_errors
-            else:
-                for k, v in device.validation_errors:
-                    VALIDATION_ERRORS[ip][k] = v
+def get_device_ouputs(ip, conn=None, device_type='cisco_ios', username='cisco', password='cisco'):
+    # CREATE DEVICE OUTPUT OBJECT
+    deviceOuput = IosOutput(device=conn, ip=ip)
 
-        # CLOSE CURRENT SSH CONNECTION AND MOVE TO NEXT DEVICE
-        ssh_connection.disconnect()
-    except Exception as error:
-        print(
-            f'{bcolors.FAIL}Error connecting to {ip}.  ErrorMsg: {error}{bcolors.ENDC}')
-        if ip not in VALIDATION_ERRORS.keys():
-            VALIDATION_ERRORS[ip] = {
-                'Connection Error': f'Error connecting to {ip}'}
-        else:
-            VALIDATION_ERRORS[ip]['Connection Error'] = f'Error connecting to {ip}'
-        if ssh_connection:
-            ssh_connection.disconnect()
-    finally:
-        if ssh_connection:
-            ssh_connection.disconnect()
-            print(f'#------Discconecting from {ip}\n\n')
+    # INDIVIDUAL DEVICE COMMANDS REQUESTED
+    deviceOuput.output_gather_all()
+
+    # APPEND CURRENT DEVICE INFO TO MASTER DEVICE INVENTORY LIST.
+    update_device_info(deviceOuput.device_info)
+
+    # APPEND ANY VALIDATION ERRORS DURING CONFIG
+    if deviceOuput.validation_errors:
+        report_device_validation_errors(ip, deviceOuput.validation_errors)
 
 
 if __name__ == "__main__":
     # SSH TO EACH DEVICE AND PERFORM REQUESTED CONFIGURATIONS IN TRY BLOCK.
     for ip in ips:
-        configure_devices(ip)
+        try:
+            # OPEN SSH CONNECTION
+            print(f'#------Connecting to {ip}')
+            ssh_connection = ConnectHandler(device_type='cisco_ios',
+                                            ip=ip, username='cisco', password='cisco')
+            print(f'{bcolors.OKGREEN}#------Connected{bcolors.ENDC}')
+
+            get_device_ouputs(ip, conn=ssh_connection)
+
+            ssh_connection.disconnect()
+
+        except Exception as error:
+            print(
+                f'{bcolors.FAIL}Error connecting to {ip}.  ErrorMsg: {error}{bcolors.ENDC}')
+            if ip not in VALIDATION_ERRORS.keys():
+                VALIDATION_ERRORS[ip] = {
+                    'Connection Error': f'Error connecting to {ip}'}
+            else:
+                VALIDATION_ERRORS[ip]['Connection Error'] = f'{error}'
+            if ssh_connection:
+                ssh_connection.disconnect()
+        finally:
+            if ssh_connection:
+                ssh_connection.disconnect()
+                print(f'#------Discconecting from {ip}\n\n')
 
     # OUTPUT INVENTORY LIST OF DEVICES CONFIGURED
     with open('./output/device-inv.txt', 'w') as f:

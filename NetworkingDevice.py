@@ -1,12 +1,10 @@
 import os
 import re
 
-
 IPV4_REGEX = r'(\d{1,3}[.]\d{1,3}[.]\d{1,3}[.]\d{1,3})'
 
 
-class IosCommands():
-
+class NetworkingDevice():
     def __init__(self, device, ip, user='cisco', password='cisco', device_type='cisco_ios'):
         self.ip = ip
         self.user = user
@@ -17,6 +15,7 @@ class IosCommands():
         self.device_info = self.getDeviceInfo()
         self.output_dir = f'./output/{self.ip}/'
         self.validation_errors = {}
+        self.test = 'test'
 
     def _console_report(self, text):
         print(f'\t-- {text}')
@@ -50,49 +49,3 @@ class IosCommands():
             'domain-name': re.search(r'(ip domain name\s)([\w\d].+)', self.device.send_command('show running-config'))[2] or None,
             'addresses': re.findall(IPV4_REGEX, self.device.send_command('show ip int br | ex una')),
         }
-
-    def config_banner(self):
-        print('- Configuring Banner')
-        with open('./config/banner.txt', 'r') as f:
-            banner = f.read()
-        self.device.send_config_set(banner, cmd_verify=False)
-
-    def config_hostname(self, hostname):
-        print('- Configuring Hostname')
-        try:
-            self.device.send_config_set(f'hostname {hostname}')
-        except:
-            print('---Hostname Configuration Failed---')
-
-    def output_gather_all(self):
-        self.output_running_config()
-        self.output_ip_int_br()
-        self.output_cdp_neighbors_det()
-        self.output_version()
-
-    def output_running_config(self):
-        output_a = self.device.send_command('show running-config all')
-        output_b = self.device.send_command('show running-config')
-        self._console_report('Outputting Show Running Configurations')
-        with open(f'{self.output_dir}{self.ip}-running-cfg-all.txt', 'w') as f:
-            f.write(output_a)
-        with open(f'{self.output_dir}{self.ip}-running-cfg.txt', 'w') as f:
-            f.write(output_b)
-
-    def output_ip_int_br(self):
-        output = self.device.send_command('show ip int br')
-        self._console_report('Outputting Show Ip Interface Brief')
-        with open(f'{self.output_dir}{self.ip}-ip-int-br.txt', 'w') as f:
-            f.write(output)
-
-    def output_cdp_neighbors_det(self):
-        output = self.device.send_command('show cdp neighbors det')
-        self._console_report('Outputting Show CDP Neighbors Detail')
-        with open(f'{self.output_dir}{self.ip}-cdp-nei-br.txt', 'w') as f:
-            f.write(output)
-
-    def output_version(self):
-        output = self.device.send_command('show version')
-        self._console_report('Outputting Show Version')
-        with open(f'{self.output_dir}{self.ip}-version', 'w') as f:
-            f.write(output)
