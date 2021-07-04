@@ -16,6 +16,7 @@ class IosCommands():
         self.device_was_setup = self.setup_device()
         self.device_info = self.getDeviceInfo()
         self.output_dir = f'./output/{self.ip}/'
+        self.validation_errors = {}
 
     def _console_report(self, text):
         print(f'\t-- {text}')
@@ -40,6 +41,7 @@ class IosCommands():
         self._console_report('Gathering Device Info')
         return {
             'hostname': self.device.send_command('show running-config | sec hostname')[9::],
+            'device_type': self.device_type,
             'mgmt_addr': self.ip,
             'user': self.user,
             'password': self.password,
