@@ -3,9 +3,6 @@ import re
 from NetworkingDevice import NetworkingDevice
 
 
-IPV4_REGEX = r'(\d{1,3}[.]\d{1,3}[.]\d{1,3}[.]\d{1,3})'
-
-
 class IosOutput(NetworkingDevice):
     def __init__(self, device, ip):
         super().__init__(device, ip)
